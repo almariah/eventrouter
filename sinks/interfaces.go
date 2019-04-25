@@ -128,6 +128,34 @@ func ManufactureSink() (e EventSinkInterface) {
 
 		go s.Run(make(chan bool))
 		return s
+	case "loki":
+		viper.SetDefault("lokiURL", "http://loki-gateway/api/prom/push")
+		viper.SetDefault("lokiBatchWait", 1000)
+		viper.SetDefault("lokiBatchSize", 100*1024)
+		viper.SetDefault("lokiMinBackoff", 100)
+		viper.SetDefault("lokiMaxBackoff", 5000)
+		viper.SetDefault("lokiMaxRetries", 5)
+		viper.SetDefault("lokiTimeout", 10000)
+		viper.SetDefault("lokiExcludedLabels", []string{
+			"event_object_meta_self_link",
+			"event_object_meta_u_i_d",
+			"event_object_meta_resource_version",
+		})
+
+		url := viper.GetString("lokiURL")
+		batchWait := viper.GetInt("lokiBatchWait")
+		batchSize := viper.GetInt("lokiBatchSize")
+		minBackoff := viper.GetInt("lokiMinBackoff")
+		maxBackoff := viper.GetInt("lokiMaxBackoff")
+		maxRetries := viper.GetInt("lokiMaxRetries")
+		timeout := viper.GetInt("lokiTimeout")
+		excludedLabels := viper.GetStringSlice("lokiExcludedLabels")
+
+		e, err := NewLokiSink(url, batchWait, batchSize, minBackoff, maxBackoff, maxRetries, timeout, excludedLabels)
+		if err != nil {
+			panic(err.Error())
+		}
+		return e
 	// case "logfile"
 	default:
 		err := errors.New("Invalid Sink Specified")
